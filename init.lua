@@ -14,7 +14,7 @@ vim.api.nvim_create_autocmd({ "textyankpost" }, {
 })
 
 -- key bindings
-local opts = { noremap = true, silent = true }
+local opt = { noremap = true, silent = true }
 vim.g.mapleader = " "
 
 vim.keymap.set("n", "<S-s>", ":w<CR>", opt)
@@ -52,18 +52,58 @@ require("lazy").setup({
 		event = "VeryLazy",
 		"hrsh7th/nvim-cmp",
 		dependencies = {
-			'neovim/nvim-lspconfig',
-			'hrsh7th/cmp-nvim-lsp',
-			'hrsh7th/cmp-buffer',
-			'hrsh7th/cmp-path',
-			'hrsh7th/cmp-cmdline',
-			'hrsh7th/nvim-cmp',
-			'L3MON4D3/LuaSnip'
-		}
+			"neovim/nvim-lspconfig",
+			"hrsh7th/cmp-nvim-lsp",
+			"hrsh7th/cmp-buffer",
+			"hrsh7th/cmp-path",
+			"hrsh7th/cmp-cmdline",
+			"hrsh7th/nvim-cmp",
+			"L3MON4D3/LuaSnip",
+		},
 	},
 	{
 		"RRethy/nvim-base16",
 		lazy = true,
+	},
+	{
+		event = "VeryLazy",
+		"jose-elias-alvarez/null-ls.nvim",
+		config = function()
+			local null_ls = require("null-ls")
+			local augroup = vim.api.nvim_create_augroup("LspFormatting", {})
+
+			null_ls.setup({
+				sources = {
+					null_ls.builtins.formatting.stylua,
+					null_ls.builtins.formatting.black,
+				},
+				-- you can reuse a shared lspconfig on_attach callback here
+				on_attach = function(client, bufnr)
+					if client.supports_method("textDocument/formatting") then
+						vim.api.nvim_clear_autocmds({ group = augroup, buffer = bufnr })
+						vim.api.nvim_create_autocmd("BufWritePre", {
+							group = augroup,
+							buffer = bufnr,
+							callback = function()
+								-- on 0.8, you should use vim.lsp.buf.format({ bufnr = bufnr }) instead
+								vim.lsp.buf.format({ bufnr = bufnr })
+							end,
+						})
+					end
+				end,
+			})
+		end,
+	},
+	{
+		"windwp/nvim-autopairs",
+		event = "VeryLazy",
+		config = function()
+			require("nvim-autopairs").setup({})
+		end,
+	},
+	{
+		"folke/neodev.nvim",
+		opts = {},
 	},
 	{
 		"folke/persistence.nvim",
@@ -83,82 +123,84 @@ require("lazy").setup({
 			-- your configuration comes here
 			-- or leave it empty to use the default settings
 			-- refer to the configuration section below
-		}
+		},
 	},
 	{
+		"nvim-telescope/telescope.nvim",
 		keys = {
-			{ "<leader>p",  ":Telescope find_files<CR>", desc = "find files" },
-			{ "<leader>P",  ":Telescope live_grep<CR>",  desc = "grep files" },
-			{ "<leader>rs", ":Telescope resume<CR>",     desc = "resume" },
-			{ "<leader>q",  ":Telescope oldfiles<CR>",   desc = "old files" },
+			{ "<leader>p", ":Telescope find_files<CR>", desc = "find files" },
+			{ "<leader>P", ":Telescope live_grep<CR>", desc = "grep files" },
+			{ "<leader>rs", ":Telescope resume<CR>", desc = "resume" },
+			{ "<leader>Q", ":Telescope oldfiles<CR>", desc = "old files" },
 		},
 		cmd = "Telescope",
-		'nvim-telescope/telescope.nvim',
-		tag = '0.1.1',
-		branch = '0.1.1',
-		dependencies = { 'nvim-lua/plenary.nvim' }
+		tag = "0.1.1",
+		dependencies = { "nvim-lua/plenary.nvim" },
 	},
 	{
 		event = "VeryLazy",
 		"neovim/nvim-lspconfig",
-		dependencies = { 'williamboman/mason-lspconfig.nvim' }
+		dependencies = { "williamboman/mason-lspconfig.nvim" },
 	},
 	{
 		"williamboman/mason.nvim",
 		event = "VeryLazy",
 		build = ":MasonUpdate", -- :MasonUpdate updates registry contents
-	}
+	},
 })
 
-
 -- lsp
-local lspconfig = require('lspconfig')
+local lspconfig = require("lspconfig")
 -- Global mappings.
 -- See `:help vim.diagnostic.*` for documentation on any of the below functions
-vim.keymap.set('n', '<leader>e', vim.diagnostic.open_float)
-vim.keymap.set('n', '[d', vim.diagnostic.goto_prev)
-vim.keymap.set('n', ']d', vim.diagnostic.goto_next)
-vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist)
+vim.keymap.set("n", "<leader>e", vim.diagnostic.open_float)
+vim.keymap.set("n", "[d", vim.diagnostic.goto_prev)
+vim.keymap.set("n", "]d", vim.diagnostic.goto_next)
+vim.keymap.set("n", "<leader>q", vim.diagnostic.setloclist)
 
 -- Use LspAttach autocommand to only map the following keys
 -- after the language server attaches to the current buffer
-vim.api.nvim_create_autocmd('LspAttach', {
-	group = vim.api.nvim_create_augroup('UserLspConfig', {}),
+vim.api.nvim_create_autocmd("LspAttach", {
+	group = vim.api.nvim_create_augroup("UserLspConfig", {}),
 	callback = function(ev)
 		-- Enable completion triggered by <c-x><c-o>
-		vim.bo[ev.buf].omnifunc = 'v:lua.vim.lsp.omnifunc'
+		vim.bo[ev.buf].omnifunc = "v:lua.vim.lsp.omnifunc"
 
 		-- Buffer local mappings.
 		-- See `:help vim.lsp.*` for documentation on any of the below functions
-		local opt = { buffer = ev.buf }
-		vim.keymap.set('n', 'gD', vim.lsp.buf.declaration, opt)
-		vim.keymap.set('n', 'gd', vim.lsp.buf.definition, opt)
-		-- vim.keymap.set('n', 'K', vim.lsp.buf.hover, opt)
-		vim.keymap.set('n', 'gi', vim.lsp.buf.implementation, opt)
-		vim.keymap.set('n', '<C-k>', vim.lsp.buf.signature_help, opt)
-		vim.keymap.set('n', '<leader>wa', vim.lsp.buf.add_workspace_folder, opt)
-		vim.keymap.set('n', '<leader>wr', vim.lsp.buf.remove_workspace_folder, opt)
-		vim.keymap.set('n', '<leader>wl', function()
+		local opts = { buffer = ev.buf }
+		vim.keymap.set("n", "gD", vim.lsp.buf.declaration, opts)
+		vim.keymap.set("n", "gd", vim.lsp.buf.definition, opts)
+		-- vim.keymap.set('n', 'K', vim.lsp.buf.hover, opts)
+		vim.keymap.set("n", "gi", vim.lsp.buf.implementation, opts)
+		vim.keymap.set("n", "<C-k>", vim.lsp.buf.signature_help, opts)
+		vim.keymap.set("n", "<leader>wa", vim.lsp.buf.add_workspace_folder, opts)
+		vim.keymap.set("n", "<leader>wr", vim.lsp.buf.remove_workspace_folder, opts)
+		vim.keymap.set("n", "<leader>wl", function()
 			print(vim.inspect(vim.lsp.buf.list_workspace_folders()))
-		end, opt)
-		vim.keymap.set('n', '<leader>D', vim.lsp.buf.type_definition, opt)
-		vim.keymap.set('n', '<leader>rn', vim.lsp.buf.rename, opt)
-		vim.keymap.set({ 'n', 'v' }, '<leader>ca', vim.lsp.buf.code_action, opt)
-		vim.keymap.set('n', 'gr', vim.lsp.buf.references, opt)
-		vim.keymap.set('n', '<leader>f', function()
-			vim.lsp.buf.format { async = true }
-		end, opt)
+		end, opts)
+		vim.keymap.set("n", "<leader>D", vim.lsp.buf.type_definition, opts)
+		vim.keymap.set("n", "<leader>rn", vim.lsp.buf.rename, opts)
+		vim.keymap.set({ "n", "v" }, "<leader>ca", vim.lsp.buf.code_action, opts)
+		vim.keymap.set("n", "gr", vim.lsp.buf.references, opts)
+		vim.keymap.set("n", "<leader>f", function()
+			vim.lsp.buf.format({ async = true })
+		end, opts)
 	end,
 })
 require("mason").setup()
 require("mason-lspconfig").setup()
 
 -- Set up lspconfig.
-local capabilities = require('cmp_nvim_lsp').default_capabilities()
+local capabilities = require("cmp_nvim_lsp").default_capabilities()
 -- Replace <YOUR_LSP_SERVER> with each lsp server you've enabled.
 -- require('lspconfig')['<YOUR_LSP_SERVER>'].setup {
 -- 	capabilities = capabilities
 -- }
+
+require("neodev").setup({
+	-- add any options here, or leave empty to use the default settings
+})
 
 require("lspconfig").lua_ls.setup({
 	capabilities = capabilities,
@@ -194,9 +236,9 @@ require("lspconfig").lua_ls.setup({
 	},
 })
 
-require("lspconfig").pyright.setup {
+require("lspconfig").pyright.setup({
 	capabilities = capabilities,
-}
+})
 
 --nvim cmp
 -- Set up nvim-cmp.
@@ -208,12 +250,14 @@ end
 
 local luasnip = require("luasnip")
 local cmp = require("cmp")
+local cmp_autopairs = require("nvim-autopairs.completion.cmp")
+cmp.event:on("confirm_done", cmp_autopairs.on_confirm_done())
 
 cmp.setup({
 	snippet = {
 		-- REQUIRED - you must specify a snippet engine
 		expand = function(args)
-			require('luasnip').lsp_expand(args.body) -- For `luasnip` users.
+			require("luasnip").lsp_expand(args.body) -- For `luasnip` users.
 			-- require('snippy').expand_snippet(args.body) -- For `snippy` users.
 			-- vim.fn["UltiSnips#Anon"](args.body) -- For `ultisnips` users.
 		end,
@@ -222,9 +266,7 @@ cmp.setup({
 		-- completion = cmp.config.window.bordered(),
 		-- documentation = cmp.config.window.bordered(),
 	},
-	mapping = {
-		-- ... Your other mappings ...
-
+	mapping = cmp.mapping.preset.insert({
 		["<Tab>"] = cmp.mapping(function(fallback)
 			if cmp.visible() then
 				cmp.select_next_item()
@@ -250,41 +292,46 @@ cmp.setup({
 		end, { "i", "s" }),
 
 		-- ... Your other mappings ...
-	},
+		["<C-b>"] = cmp.mapping.scroll_docs(-4),
+		["<C-f>"] = cmp.mapping.scroll_docs(4),
+		["<C-Space>"] = cmp.mapping.complete(),
+		["<C-e>"] = cmp.mapping.abort(),
+		["<CR>"] = cmp.mapping.confirm({ select = true }), -- Accept currently selected item. Set `select` to `false` to only confirm explicitly selected items.
+	}),
 	sources = cmp.config.sources({
-		{ name = 'nvim_lsp' },
-		{ name = 'vsnip' }, -- For vsnip users.
+		{ name = "nvim_lsp" },
+		{ name = "vsnip" }, -- For vsnip users.
 		-- { name = 'luasnip' }, -- For luasnip users.
 		-- { name = 'ultisnips' }, -- For ultisnips users.
 		-- { name = 'snippy' }, -- For snippy users.
 	}, {
-		{ name = 'buffer' },
-	})
+		{ name = "buffer" },
+	}),
 })
 
 -- Set configuration for specific filetype.
-cmp.setup.filetype('gitcommit', {
+cmp.setup.filetype("gitcommit", {
 	sources = cmp.config.sources({
-		{ name = 'cmp_git' }, -- You can specify the `cmp_git` source if you were installed it.
+		{ name = "cmp_git" }, -- You can specify the `cmp_git` source if you were installed it.
 	}, {
-		{ name = 'buffer' },
-	})
+		{ name = "buffer" },
+	}),
 })
 
 -- Use buffer source for `/` and `?` (if you enabled `native_menu`, this won't work anymore).
-cmp.setup.cmdline({ '/', '?' }, {
+cmp.setup.cmdline({ "/", "?" }, {
 	mapping = cmp.mapping.preset.cmdline(),
 	sources = {
-		{ name = 'buffer' }
-	}
+		{ name = "buffer" },
+	},
 })
 
 -- Use cmdline & path source for ':' (if you enabled `native_menu`, this won't work anymore).
-cmp.setup.cmdline(':', {
+cmp.setup.cmdline(":", {
 	mapping = cmp.mapping.preset.cmdline(),
 	sources = cmp.config.sources({
-		{ name = 'path' }
+		{ name = "path" },
 	}, {
-		{ name = 'cmdline' }
-	})
+		{ name = "cmdline" },
+	}),
 })
