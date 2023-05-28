@@ -53,24 +53,28 @@ require("lazy").setup({
 		lazy = true,
 	}, 
 	{
-	  "folke/persistence.nvim",
-	  event = "BufReadPre", -- this will only start session saving when an actual file was opened
-	  opts = {
-	    -- add any custom options here
-	  },
+	  	event = "VeryLazy",
+		"neovim/nvim-lspconfig", 
+	}, 
+	{
+	  	"folke/persistence.nvim",
+	  	event = "BufReadPre", -- this will only start session saving when an actual file was opened
+	  	opts = {
+	  	  -- add any custom options here
+	  	},
 	},
 	{
-	  "folke/which-key.nvim",
-	  event = "VeryLazy",
-	  init = function()
-	    vim.o.timeout = true
-	    vim.o.timeoutlen = 300
-	  end,
-	  opts = {
-	    -- your configuration comes here
-	    -- or leave it empty to use the default settings
-	    -- refer to the configuration section below
-	  }
+	  	event = "VeryLazy",
+	  	"folke/which-key.nvim",
+	  	init = function()
+	  	  vim.o.timeout = true
+	  	  vim.o.timeoutlen = 300
+	  	end,
+	  	opts = {
+	  	  -- your configuration comes here
+	  	  -- or leave it empty to use the default settings
+	  	  -- refer to the configuration section below
+	  	}
 	},
 	{
    		keys = {
@@ -85,5 +89,13 @@ require("lazy").setup({
 		branch = '0.1.1',
       		dependencies = { 'nvim-lua/plenary.nvim' }
     	},
+	{
+		"williamboman/mason.nvim",
+		event = "VeryLazy",
+		build = ":MasonUpdate", -- :MasonUpdate updates registry contents
+		config = function()
+			require("mason").setup()
+		end
+	}
 })
 
