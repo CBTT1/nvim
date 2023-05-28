@@ -63,7 +63,6 @@ require("lazy").setup({
 	},
 	{
 		"RRethy/nvim-base16",
-		lazy = true,
 	},
 	{
 		event = "VeryLazy",
@@ -136,6 +135,11 @@ require("lazy").setup({
 		cmd = "Telescope",
 		tag = "0.1.1",
 		dependencies = { "nvim-lua/plenary.nvim" },
+	},
+	{
+		event = "VeryLazy",
+		"tpope/vim-fugitive",
+		cmd = "Git",
 	},
 	{
 		event = "VeryLazy",
