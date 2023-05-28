@@ -140,6 +140,11 @@ require("lazy").setup({
 		event = "VeryLazy",
 		"tpope/vim-fugitive",
 		cmd = "Git",
+		config = function()
+			-- convert
+			vim.cmd.cnoreabbrev([[git Git]])
+			vim.cmd.cnoreabbrev([[gp Git push]])
+		end,
 	},
 	{
 		event = "VeryLazy",
@@ -346,6 +351,3 @@ cmp.setup.cmdline(":", {
 		{ name = "cmdline" },
 	}),
 })
-
--- convert
-vim.cmd.cnoreabbrev([[git Git]])
