@@ -22,10 +22,11 @@ vim.keymap.set("n", "<S-q>", ":q<CR>", opt)
 vim.keymap.set("n", "<S-j>", "5j", opt)
 vim.keymap.set("n", "<S-k>", "5k", opt)
 
-vim.keymap.set("n", "<C-l>", "<C-w>l", opt)
-vim.keymap.set("n", "<C-h>", "<C-w>h", opt)
-vim.keymap.set("n", "<C-k>", "<C-w>k", opt)
-vim.keymap.set("n", "<C-j>", "<C-w>j", opt)
+vim.keymap.set({ "n", "t" }, "<C-h>", "<CMD>NavigatorLeft<CR>")
+vim.keymap.set({ "n", "t" }, "<C-l>", "<CMD>NavigatorRight<CR>")
+vim.keymap.set({ "n", "t" }, "<C-k>", "<CMD>NavigatorUp<CR>")
+vim.keymap.set({ "n", "t" }, "<C-j>", "<CMD>NavigatorDown<CR>")
+
 vim.keymap.set("n", "<Leader>v", "<C-w>v", opt)
 vim.keymap.set("n", "<Leader>s", "<C-w>s", opt)
 vim.keymap.set("n", "<Leader>[", "<C-o>", opt)
@@ -103,6 +104,12 @@ require("lazy").setup({
 	{
 		"folke/neodev.nvim",
 		opts = {},
+	},
+	{
+		"numToStr/Navigator.nvim",
+		config = function()
+			require("Navigator").setup()
+		end,
 	},
 	{
 		"folke/persistence.nvim",
