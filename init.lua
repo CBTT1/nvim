@@ -155,6 +155,13 @@ require("lazy").setup({
 	},
 	{
 		event = "VeryLazy",
+		"rhysd/conflict-marker.vim",
+		config = function()
+			require("gitsigns").setup()
+		end,
+	},
+	{
+		event = "VeryLazy",
 		"neovim/nvim-lspconfig",
 		dependencies = { "williamboman/mason-lspconfig.nvim" },
 	},
