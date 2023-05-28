@@ -143,6 +143,13 @@ require("lazy").setup({
 	},
 	{
 		event = "VeryLazy",
+		"lewis6991/gitsigns.nvim",
+		config = function()
+			require("gitsigns").setup()
+		end,
+	},
+	{
+		event = "VeryLazy",
 		"neovim/nvim-lspconfig",
 		dependencies = { "williamboman/mason-lspconfig.nvim" },
 	},
