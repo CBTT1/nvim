@@ -85,6 +85,25 @@ require("lazy").setup({
 		},
 	},
 	{
+		"nvim-treesitter/nvim-treesitter",
+		config = function()
+			require("nvim-treesitter.configs").setup({
+				ensure_installed = { "c", "lua", "vim", "vimdoc" },
+				auto_install = true,
+				highlight = {
+					enable = true,
+				},
+				incremental_selection = {
+					enable = true,
+					keymaps = {
+						node_incremental = "v",
+						node_decremental = "<BS>",
+					},
+				},
+			})
+		end,
+	},
+	{
 		event = "VeryLazy",
 		"jose-elias-alvarez/null-ls.nvim",
 		config = function()
@@ -133,6 +152,9 @@ require("lazy").setup({
 	{
 		"folke/persistence.nvim",
 		event = "BufReadPre", -- this will only start session saving when an actual file was opened
+		config = function()
+			require("persistence").setup()
+		end,
 		opts = {
 			-- add any custom options here
 		},
@@ -427,3 +449,11 @@ vim.cmd([[
 		highlight ConflictMarkerEnd guibg=#2f628e
 		highlight ConflictMarkerCommonAncestorsHunk guibg=#754a81
 ]])
+
+-- persistence onset
+local args = vim.api.nvim_get_vvar("argv")
+
+if #args > 2 then
+else
+	require("persistence").load({ last = true })
+end
