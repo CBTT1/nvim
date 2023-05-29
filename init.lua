@@ -1,5 +1,6 @@
 local set = vim.o
 set.number = true
+set.encoding = "UTF-8"
 set.relativenumber = true
 set.clipboard = "unnamed"
 
@@ -80,6 +81,7 @@ require("lazy").setup({
 		end,
 		dependencies = {
 			"Xuyuanp/nerdtree-git-plugin",
+			"ryanoasis/vim-devicons",
 		},
 	},
 	{
