@@ -66,6 +66,20 @@ require("lazy").setup({
 		"RRethy/nvim-base16",
 	},
 	{
+		keys = {
+			{ "tt", ":NERDTreeToggle<CR>", desc = "toggle nerdtree" },
+			{ "tf", ":NERDTreeFind<CR>", desc = "nerdtree find" },
+		},
+		cmd = { "NERDTreeToggle", "NERDTree", "NERDTreeFind" },
+		"preservim/nerdtree",
+		config = function()
+			vim.cmd([[
+				let NERDTreeShowLineNumber=1
+				autocmd FileType nerdtree setlocal relativenumber
+			]])
+		end,
+	},
+	{
 		event = "VeryLazy",
 		"jose-elias-alvarez/null-ls.nvim",
 		config = function()
