@@ -3,7 +3,7 @@ set.number = true
 set.encoding = "UTF-8"
 set.relativenumber = true
 set.clipboard = "unnamed"
-
+set.shiftwidth = 4
 -- copy后高亮
 vim.api.nvim_create_autocmd({ "textyankpost" }, {
 	pattern = { "*" },
@@ -13,29 +13,23 @@ vim.api.nvim_create_autocmd({ "textyankpost" }, {
 		})
 	end,
 })
-
 -- key bindings
 local opt = { noremap = true, silent = true }
 vim.g.mapleader = " "
-
 vim.keymap.set("n", "<S-s>", ":w<CR>", opt)
 vim.keymap.set("n", "<S-q>", ":q<CR>", opt)
 vim.keymap.set("n", "<S-j>", "5j", opt)
 vim.keymap.set("n", "<S-k>", "5k", opt)
-
 vim.keymap.set({ "n", "t" }, "<C-h>", "<CMD>NavigatorLeft<CR>")
 vim.keymap.set({ "n", "t" }, "<C-l>", "<CMD>NavigatorRight<CR>")
 vim.keymap.set({ "n", "t" }, "<C-k>", "<CMD>NavigatorUp<CR>")
 vim.keymap.set({ "n", "t" }, "<C-j>", "<CMD>NavigatorDown<CR>")
-
 vim.keymap.set("n", "<Leader>v", "<C-w>v", opt)
 vim.keymap.set("n", "<Leader>s", "<C-w>s", opt)
 vim.keymap.set("n", "<Leader>[", "<C-o>", opt)
 vim.keymap.set("n", "<Leader>]", "<C-i>", opt)
-
 vim.keymap.set("n", "j", [[v:count ? 'j' : 'gj']], { noremap = true, expr = true })
 vim.keymap.set("n", "k", [[v:count ? 'k' : 'gk']], { noremap = true, expr = true })
-
 --lazy.nvim
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
 if not vim.loop.fs_stat(lazypath) then
@@ -109,11 +103,11 @@ require("lazy").setup({
 		config = function()
 			local null_ls = require("null-ls")
 			local augroup = vim.api.nvim_create_augroup("LspFormatting", {})
-
 			null_ls.setup({
 				sources = {
 					null_ls.builtins.formatting.stylua,
 					null_ls.builtins.formatting.black,
+					null_ls.builtins.formatting.clang_format,
 				},
 				-- you can reuse a shared lspconfig on_attach callback here
 				on_attach = function(client, bufnr)
@@ -146,7 +140,7 @@ require("lazy").setup({
 	{
 		"numToStr/Navigator.nvim",
 		config = function()
-			require("Navigator").setup()
+			require("Navigator").setup({})
 		end,
 	},
 	{
@@ -231,7 +225,6 @@ require("lazy").setup({
 		build = ":MasonUpdate", -- :MasonUpdate updates registry contents
 	},
 })
-
 -- lsp
 local lspconfig = require("lspconfig")
 -- Global mappings.
@@ -240,7 +233,6 @@ vim.keymap.set("n", "<leader>e", vim.diagnostic.open_float)
 vim.keymap.set("n", "[d", vim.diagnostic.goto_prev)
 vim.keymap.set("n", "]d", vim.diagnostic.goto_next)
 vim.keymap.set("n", "<leader>q", vim.diagnostic.setloclist)
-
 -- Use LspAttach autocommand to only map the following keys
 -- after the language server attaches to the current buffer
 vim.api.nvim_create_autocmd("LspAttach", {
@@ -248,7 +240,6 @@ vim.api.nvim_create_autocmd("LspAttach", {
 	callback = function(ev)
 		-- Enable completion triggered by <c-x><c-o>
 		vim.bo[ev.buf].omnifunc = "v:lua.vim.lsp.omnifunc"
-
 		-- Buffer local mappings.
 		-- See `:help vim.lsp.*` for documentation on any of the below functions
 		local opts = { buffer = ev.buf }
@@ -272,7 +263,9 @@ vim.api.nvim_create_autocmd("LspAttach", {
 	end,
 })
 require("mason").setup()
-require("mason-lspconfig").setup()
+-- require("mason-lspconfig").setup({
+-- 	ensure_installed = { "lua_ls", "pyright", "clangd" },
+-- })
 
 -- Set up lspconfig.
 local capabilities = require("cmp_nvim_lsp").default_capabilities()
@@ -280,12 +273,25 @@ local capabilities = require("cmp_nvim_lsp").default_capabilities()
 -- require('lspconfig')['<YOUR_LSP_SERVER>'].setup {
 -- 	capabilities = capabilities
 -- }
-
 require("neodev").setup({
 	-- add any options here, or leave empty to use the default settings
 })
 
-require("lspconfig").lua_ls.setup({
+-- matlab LSP
+lspconfig.matlab_ls.setup({
+	capabilities = capabilities,
+	filetypes = { "matlab" },
+	cmd = { "matlab-language-server", "--stdio" },
+	settings = {
+		matlab = {
+			indexWorkspace = false,
+			installPath = "",
+			matlabConnectionTiming = "onStart",
+			telemetry = true,
+		},
+	},
+})
+lspconfig.lua_ls.setup({
 	capabilities = capabilities,
 	settings = {
 		Lua = {
@@ -318,13 +324,11 @@ require("lspconfig").lua_ls.setup({
 		},
 	},
 })
-
-require("lspconfig").pyright.setup({
+lspconfig.pyright.setup({
 	capabilities = capabilities,
 })
-
 local util = require("lspconfig.util")
-require("lspconfig").clangd.setup({
+lspconfig.clangd.setup({
 	capabilities = capabilities,
 	cmd = { "clangd" },
 	filetypes = { "c", "cpp", "objc", "objcpp", "cuda", "proto" },
@@ -339,7 +343,6 @@ require("lspconfig").clangd.setup({
 	),
 	single_file_support = true,
 })
-
 --nvim cmp
 -- Set up nvim-cmp.
 local has_words_before = function()
@@ -347,12 +350,10 @@ local has_words_before = function()
 	local line, col = unpack(vim.api.nvim_win_get_cursor(0))
 	return col ~= 0 and vim.api.nvim_buf_get_lines(0, line - 1, line, true)[1]:sub(col, col):match("%s") == nil
 end
-
 local luasnip = require("luasnip")
 local cmp = require("cmp")
 local cmp_autopairs = require("nvim-autopairs.completion.cmp")
 cmp.event:on("confirm_done", cmp_autopairs.on_confirm_done())
-
 cmp.setup({
 	snippet = {
 		-- REQUIRED - you must specify a snippet engine
@@ -380,7 +381,6 @@ cmp.setup({
 				fallback()
 			end
 		end, { "i", "s" }),
-
 		["<S-Tab>"] = cmp.mapping(function(fallback)
 			if cmp.visible() then
 				cmp.select_prev_item()
@@ -390,7 +390,6 @@ cmp.setup({
 				fallback()
 			end
 		end, { "i", "s" }),
-
 		-- ... Your other mappings ...
 		["<C-b>"] = cmp.mapping.scroll_docs(-4),
 		["<C-f>"] = cmp.mapping.scroll_docs(4),
@@ -408,7 +407,6 @@ cmp.setup({
 		{ name = "buffer" },
 	}),
 })
-
 -- Set configuration for specific filetype.
 cmp.setup.filetype("gitcommit", {
 	sources = cmp.config.sources({
@@ -417,7 +415,6 @@ cmp.setup.filetype("gitcommit", {
 		{ name = "buffer" },
 	}),
 })
-
 -- Use buffer source for `/` and `?` (if you enabled `native_menu`, this won't work anymore).
 cmp.setup.cmdline({ "/", "?" }, {
 	mapping = cmp.mapping.preset.cmdline(),
@@ -425,7 +422,6 @@ cmp.setup.cmdline({ "/", "?" }, {
 		{ name = "buffer" },
 	},
 })
-
 -- Use cmdline & path source for ':' (if you enabled `native_menu`, this won't work anymore).
 cmp.setup.cmdline(":", {
 	mapping = cmp.mapping.preset.cmdline(),
@@ -435,7 +431,6 @@ cmp.setup.cmdline(":", {
 		{ name = "cmdline" },
 	}),
 })
-
 vim.cmd([[
 		let g:conflict_marker_highlight_group = ''
 		
@@ -449,10 +444,8 @@ vim.cmd([[
 		highlight ConflictMarkerEnd guibg=#2f628e
 		highlight ConflictMarkerCommonAncestorsHunk guibg=#754a81
 ]])
-
 -- persistence onset
 local args = vim.api.nvim_get_vvar("argv")
-
 if #args > 2 then
 else
 	require("persistence").load({ last = true })
