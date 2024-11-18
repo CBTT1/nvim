@@ -45,6 +45,9 @@ end
 vim.opt.rtp:prepend(lazypath)
 require("lazy").setup({
 	{
+		"Mofiqul/dracula.nvim",
+	},
+	{
 		event = "VeryLazy",
 		"hrsh7th/nvim-cmp",
 		dependencies = {
@@ -107,7 +110,6 @@ require("lazy").setup({
 				sources = {
 					null_ls.builtins.formatting.stylua,
 					null_ls.builtins.formatting.black,
-					null_ls.builtins.formatting.clang_format,
 				},
 				-- you can reuse a shared lspconfig on_attach callback here
 				on_attach = function(client, bufnr)
@@ -136,6 +138,15 @@ require("lazy").setup({
 	{
 		"folke/neodev.nvim",
 		opts = {},
+	},
+	{
+		event = "VeryLazy",
+		"iamcco/markdown-preview.nvim",
+		build = "cd app && yarn install",
+		ft = { "markdown" },
+		config = function()
+			-- 如果需要额外配置，可以在这里添加
+		end,
 	},
 	{
 		"numToStr/Navigator.nvim",
@@ -326,6 +337,14 @@ lspconfig.lua_ls.setup({
 })
 lspconfig.pyright.setup({
 	capabilities = capabilities,
+	settings = {
+		python = {
+			pythonPath = "/Users/cbtt1/miniconda3/envs/pytorch/bin/python",
+			analysis = {
+				extraPaths = "/Users/cbtt1/code/Python/LearnPy/dl_learn/DeepLearningFromScratch",
+			},
+		},
+	},
 })
 local util = require("lspconfig.util")
 lspconfig.clangd.setup({
@@ -444,6 +463,8 @@ vim.cmd([[
 		highlight ConflictMarkerEnd guibg=#2f628e
 		highlight ConflictMarkerCommonAncestorsHunk guibg=#754a81
 ]])
+--dracula
+vim.cmd([[colorscheme dracula]])
 -- persistence onset
 local args = vim.api.nvim_get_vvar("argv")
 if #args > 2 then
