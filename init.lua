@@ -30,6 +30,11 @@ vim.keymap.set("n", "<Leader>[", "<C-o>", opt)
 vim.keymap.set("n", "<Leader>]", "<C-i>", opt)
 vim.keymap.set("n", "j", [[v:count ? 'j' : 'gj']], { noremap = true, expr = true })
 vim.keymap.set("n", "k", [[v:count ? 'k' : 'gk']], { noremap = true, expr = true })
+
+-- 选择折叠方法
+vim.opt.foldmethod = 'expr'    -- 推荐：表达式模式（结合 Treesitter）
+vim.opt.foldexpr = 'nvim_treesitter#foldexpr()'  -- 如果安装 Treesitter
+
 --lazy.nvim
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
 if not vim.loop.fs_stat(lazypath) then
@@ -85,7 +90,10 @@ require("lazy").setup({
 		"nvim-treesitter/nvim-treesitter",
 		config = function()
 			require("nvim-treesitter.configs").setup({
-				ensure_installed = { "c", "lua", "vim", "vimdoc" },
+				ensure_installed = { "c", "python", "lua", "vim", "vimdoc" },
+				sync_install = false,
+				ignore_install = {},
+
 				auto_install = true,
 				highlight = {
 					enable = true,
@@ -101,8 +109,56 @@ require("lazy").setup({
 		end,
 	},
 	{
+		'kevinhwang91/nvim-ufo',
+	  	dependencies = {
+	  	  'kevinhwang91/promise-async',  -- 必需依赖
+	  	},
+	  	event = 'BufReadPost',  -- 延迟加载，提高启动速度
+	  	config = function()
+	  	  -- 配置见下一步
+		    -- 全局折叠设置（nvim-ufo 要求 foldlevel 高值）
+			vim.o.foldcolumn = '1'  -- 左侧折叠列（0=无，1=最小）
+			vim.o.foldlevel = 99    -- 初始展开所有（可调低到 10）
+			vim.o.foldlevelstart = 99
+			vim.o.foldenable = true
+			
+			-- 键映射（覆盖默认 zR/zM）
+			vim.keymap.set('n', 'zR', require('ufo').openAllFolds)
+			vim.keymap.set('n', 'zM', require('ufo').closeAllFolds)
+			vim.keymap.set('n', 'zr', require('ufo').openFoldsExceptKinds)  -- 展开除注释外的所有
+			vim.keymap.set('n', 'zM', require('ufo').closeAllFolds)  -- 全折叠
+			
+			-- nvim-ufo setup（用 Treesitter + indent 提供者）
+			require('ufo').setup({
+			  provider_selector = function(bufnr, filetype, buftype)
+			    return { 'treesitter', 'indent' }  -- Treesitter 优先，fallback 到缩进
+			  end,
+			  -- 可选：预览功能（鼠标悬停或 K 键查看折叠内容）
+			  preview = {
+			    win_config = {
+			      border = { '', '─', '', '', '', '─', '', '' },  -- 边框样式
+			      winhighlight = 'Normal:Folded',
+			      winblend = 0,
+			    },
+			    mappings = {
+			      scrollU = '<C-u>',
+			      scrollE = '<C-e>',
+			      close = 'q',
+			    },
+			  },
+			  -- 关闭 Treesitter 冲突（可选，如果你之前设置了 foldexpr）
+			  fold_virt_text_handler = function(virt_text)
+			    -- 自定义折叠文本（默认是 ...）
+			  end,
+			})
+			
+			-- 禁用 Treesitter 的旧折叠（避免冲突）
+			vim.opt.foldmethod = 'manual'  -- nvim-ufo 会自动管理
+	  	end,
+	},
+	{
 		event = "VeryLazy",
-		"jose-elias-alvarez/null-ls.nvim",
+		"nvimtools/none-ls.nvim",
 		config = function()
 			local null_ls = require("null-ls")
 			local augroup = vim.api.nvim_create_augroup("LspFormatting", {})
@@ -120,7 +176,7 @@ require("lazy").setup({
 							buffer = bufnr,
 							callback = function()
 								-- on 0.8, you should use vim.lsp.buf.format({ bufnr = bufnr }) instead
-								vim.lsp.buf.format({ bufnr = bufnr })
+								-- vim.lsp.buf.format({ bufnr = bufnr })
 							end,
 						})
 					end
@@ -178,16 +234,14 @@ require("lazy").setup({
 		},
 	},
 	{
-		"nvim-telescope/telescope.nvim",
+		'nvim-telescope/telescope.nvim', tag = '0.1.8',
+		dependencies = { 'nvim-lua/plenary.nvim' },
 		keys = {
 			{ "<leader>p", ":Telescope find_files<CR>", desc = "find files" },
 			{ "<leader>P", ":Telescope live_grep<CR>", desc = "grep files" },
 			{ "<leader>rs", ":Telescope resume<CR>", desc = "resume" },
 			{ "<leader>Q", ":Telescope oldfiles<CR>", desc = "old files" },
 		},
-		cmd = "Telescope",
-		tag = "0.1.1",
-		dependencies = { "nvim-lua/plenary.nvim" },
 	},
 	{
 		event = "VeryLazy",
@@ -236,8 +290,6 @@ require("lazy").setup({
 		build = ":MasonUpdate", -- :MasonUpdate updates registry contents
 	},
 })
--- lsp
-local lspconfig = require("lspconfig")
 -- Global mappings.
 -- See `:help vim.diagnostic.*` for documentation on any of the below functions
 vim.keymap.set("n", "<leader>e", vim.diagnostic.open_float)
@@ -288,21 +340,8 @@ require("neodev").setup({
 	-- add any options here, or leave empty to use the default settings
 })
 
--- matlab LSP
-lspconfig.matlab_ls.setup({
-	capabilities = capabilities,
-	filetypes = { "matlab" },
-	cmd = { "matlab-language-server", "--stdio" },
-	settings = {
-		matlab = {
-			indexWorkspace = false,
-			installPath = "",
-			matlabConnectionTiming = "onStart",
-			telemetry = true,
-		},
-	},
-})
-lspconfig.lua_ls.setup({
+-- lsp config
+vim.lsp.config('lua_ls',{
 	capabilities = capabilities,
 	settings = {
 		Lua = {
@@ -335,7 +374,7 @@ lspconfig.lua_ls.setup({
 		},
 	},
 })
-lspconfig.pyright.setup({
+vim.lsp.config('pyright',{
 	capabilities = capabilities,
 	settings = {
 		python = {
@@ -347,7 +386,7 @@ lspconfig.pyright.setup({
 	},
 })
 local util = require("lspconfig.util")
-lspconfig.clangd.setup({
+vim.lsp.config('clangd',{
 	capabilities = capabilities,
 	cmd = { "clangd" },
 	filetypes = { "c", "cpp", "objc", "objcpp", "cuda", "proto" },
@@ -361,6 +400,24 @@ lspconfig.clangd.setup({
 		".git"
 	),
 	single_file_support = true,
+})
+
+-- 自动启用 LSP（按文件类型，避免全局加载）
+local ft_to_server = {
+  lua = 'lua_ls',
+  python = 'pyright',
+  c = 'clangd',
+  cpp = 'clangd',  -- C++ 文件类型
+}
+
+vim.api.nvim_create_autocmd('FileType', {
+  pattern = vim.tbl_keys(ft_to_server),  -- 自动匹配你的文件类型
+  callback = function(ev)
+    local server = ft_to_server[ev.match]
+    if server then
+      vim.lsp.enable(server)
+    end
+  end,
 })
 --nvim cmp
 -- Set up nvim-cmp.
