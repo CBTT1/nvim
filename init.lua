@@ -30,10 +30,26 @@ vim.keymap.set("n", "<Leader>[", "<C-o>", opt)
 vim.keymap.set("n", "<Leader>]", "<C-i>", opt)
 vim.keymap.set("n", "j", [[v:count ? 'j' : 'gj']], { noremap = true, expr = true })
 vim.keymap.set("n", "k", [[v:count ? 'k' : 'gk']], { noremap = true, expr = true })
+vim.keymap.set('n', '<Esc>', ':noh<CR><Esc>', { silent = true, noremap = true })
 
 -- 选择折叠方法
-vim.opt.foldmethod = 'expr'    -- 推荐：表达式模式（结合 Treesitter）
-vim.opt.foldexpr = 'nvim_treesitter#foldexpr()'  -- 如果安装 Treesitter
+vim.opt.foldmethod = "expr" -- 推荐：表达式模式（结合 Treesitter）
+vim.opt.foldexpr = "nvim_treesitter#foldexpr()" -- 如果安装 Treesitter
+
+-- C/C++ 缩进修复：禁用 cindent 回退，保持一致缩进
+vim.api.nvim_create_autocmd("FileType", {
+	pattern = { "c", "cpp" },
+	callback = function()
+		vim.opt_local.expandtab = true -- 用空格（非 Tab）
+		vim.opt_local.shiftwidth = 4 -- 4 空格缩进
+		vim.opt_local.softtabstop = 4
+		vim.opt_local.autoindent = true -- 保留基本缩进
+		vim.opt_local.smartindent = true -- 启用智能（处理 { } 但不回退）
+		vim.opt_local.cindent = false -- 关键：禁用 cindent，避免 { 回退
+		-- 如果想微调 cinoptions（备选，保留 cindent）
+		-- vim.opt_local.cinoptions = { "(0", ":0", "Ws" }  -- { 不额外缩进，switch case 不缩进
+	end,
+})
 
 --lazy.nvim
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
@@ -109,52 +125,52 @@ require("lazy").setup({
 		end,
 	},
 	{
-		'kevinhwang91/nvim-ufo',
-	  	dependencies = {
-	  	  'kevinhwang91/promise-async',  -- 必需依赖
-	  	},
-	  	event = 'BufReadPost',  -- 延迟加载，提高启动速度
-	  	config = function()
-	  	  -- 配置见下一步
-		    -- 全局折叠设置（nvim-ufo 要求 foldlevel 高值）
-			vim.o.foldcolumn = '1'  -- 左侧折叠列（0=无，1=最小）
-			vim.o.foldlevel = 99    -- 初始展开所有（可调低到 10）
+		"kevinhwang91/nvim-ufo",
+		dependencies = {
+			"kevinhwang91/promise-async", -- 必需依赖
+		},
+		event = "BufReadPost", -- 延迟加载，提高启动速度
+		config = function()
+			-- 配置见下一步
+			-- 全局折叠设置（nvim-ufo 要求 foldlevel 高值）
+			vim.o.foldcolumn = "1" -- 左侧折叠列（0=无，1=最小）
+			vim.o.foldlevel = 99 -- 初始展开所有（可调低到 10）
 			vim.o.foldlevelstart = 99
 			vim.o.foldenable = true
-			
+
 			-- 键映射（覆盖默认 zR/zM）
-			vim.keymap.set('n', 'zR', require('ufo').openAllFolds)
-			vim.keymap.set('n', 'zM', require('ufo').closeAllFolds)
-			vim.keymap.set('n', 'zr', require('ufo').openFoldsExceptKinds)  -- 展开除注释外的所有
-			vim.keymap.set('n', 'zM', require('ufo').closeAllFolds)  -- 全折叠
-			
+			vim.keymap.set("n", "zR", require("ufo").openAllFolds)
+			vim.keymap.set("n", "zM", require("ufo").closeAllFolds)
+			vim.keymap.set("n", "zr", require("ufo").openFoldsExceptKinds) -- 展开除注释外的所有
+			vim.keymap.set("n", "zM", require("ufo").closeAllFolds) -- 全折叠
+
 			-- nvim-ufo setup（用 Treesitter + indent 提供者）
-			require('ufo').setup({
-			  provider_selector = function(bufnr, filetype, buftype)
-			    return { 'treesitter', 'indent' }  -- Treesitter 优先，fallback 到缩进
-			  end,
-			  -- 可选：预览功能（鼠标悬停或 K 键查看折叠内容）
-			  preview = {
-			    win_config = {
-			      border = { '', '─', '', '', '', '─', '', '' },  -- 边框样式
-			      winhighlight = 'Normal:Folded',
-			      winblend = 0,
-			    },
-			    mappings = {
-			      scrollU = '<C-u>',
-			      scrollE = '<C-e>',
-			      close = 'q',
-			    },
-			  },
-			  -- 关闭 Treesitter 冲突（可选，如果你之前设置了 foldexpr）
-			  fold_virt_text_handler = function(virt_text)
-			    -- 自定义折叠文本（默认是 ...）
-			  end,
+			require("ufo").setup({
+				provider_selector = function(bufnr, filetype, buftype)
+					return { "treesitter", "indent" } -- Treesitter 优先，fallback 到缩进
+				end,
+				-- 可选：预览功能（鼠标悬停或 K 键查看折叠内容）
+				preview = {
+					win_config = {
+						border = { "", "─", "", "", "", "─", "", "" }, -- 边框样式
+						winhighlight = "Normal:Folded",
+						winblend = 0,
+					},
+					mappings = {
+						scrollU = "<C-u>",
+						scrollE = "<C-e>",
+						close = "q",
+					},
+				},
+				-- 关闭 Treesitter 冲突（可选，如果你之前设置了 foldexpr）
+				fold_virt_text_handler = function(virt_text)
+					-- 自定义折叠文本（默认是 ...）
+				end,
 			})
-			
+
 			-- 禁用 Treesitter 的旧折叠（避免冲突）
-			vim.opt.foldmethod = 'manual'  -- nvim-ufo 会自动管理
-	  	end,
+			vim.opt.foldmethod = "manual" -- nvim-ufo 会自动管理
+		end,
 	},
 	{
 		event = "VeryLazy",
@@ -234,8 +250,9 @@ require("lazy").setup({
 		},
 	},
 	{
-		'nvim-telescope/telescope.nvim', tag = '0.1.8',
-		dependencies = { 'nvim-lua/plenary.nvim' },
+		"nvim-telescope/telescope.nvim",
+		tag = "0.1.8",
+		dependencies = { "nvim-lua/plenary.nvim" },
 		keys = {
 			{ "<leader>p", ":Telescope find_files<CR>", desc = "find files" },
 			{ "<leader>P", ":Telescope live_grep<CR>", desc = "grep files" },
@@ -341,7 +358,7 @@ require("neodev").setup({
 })
 
 -- lsp config
-vim.lsp.config('lua_ls',{
+vim.lsp.config("lua_ls", {
 	capabilities = capabilities,
 	settings = {
 		Lua = {
@@ -374,7 +391,7 @@ vim.lsp.config('lua_ls',{
 		},
 	},
 })
-vim.lsp.config('pyright',{
+vim.lsp.config("pyright", {
 	capabilities = capabilities,
 	settings = {
 		python = {
@@ -386,7 +403,7 @@ vim.lsp.config('pyright',{
 	},
 })
 local util = require("lspconfig.util")
-vim.lsp.config('clangd',{
+vim.lsp.config("clangd", {
 	capabilities = capabilities,
 	cmd = { "clangd" },
 	filetypes = { "c", "cpp", "objc", "objcpp", "cuda", "proto" },
@@ -404,21 +421,30 @@ vim.lsp.config('clangd',{
 
 -- 自动启用 LSP（按文件类型，避免全局加载）
 local ft_to_server = {
-  lua = 'lua_ls',
-  python = 'pyright',
-  c = 'clangd',
-  cpp = 'clangd',  -- C++ 文件类型
+	lua = "lua_ls",
+	python = "pyright",
+	c = "clangd",
+	cpp = "clangd", -- C++ 文件类型
 }
 
-vim.api.nvim_create_autocmd('FileType', {
-  pattern = vim.tbl_keys(ft_to_server),  -- 自动匹配你的文件类型
-  callback = function(ev)
-    local server = ft_to_server[ev.match]
-    if server then
-      vim.lsp.enable(server)
-    end
-  end,
+vim.api.nvim_create_autocmd("FileType", {
+	pattern = vim.tbl_keys(ft_to_server), -- 自动匹配你的文件类型
+	callback = function(ev)
+		local server = ft_to_server[ev.match]
+		if server then
+			vim.lsp.enable(server)
+		end
+	end,
 })
+
+-- VSCode 插件禁用Treesitter
+if vim.g.vscode then
+	-- VSCode 模式：禁用 Treesitter indent
+	require("nvim-treesitter.configs").setup({
+		indent = { enable = false }, -- 全局禁用在 VSCode 中
+	})
+end
+
 --nvim cmp
 -- Set up nvim-cmp.
 local has_words_before = function()
