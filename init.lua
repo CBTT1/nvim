@@ -36,20 +36,12 @@ vim.keymap.set('n', '<Esc>', ':noh<CR><Esc>', { silent = true, noremap = true })
 vim.opt.foldmethod = "expr" -- 推荐：表达式模式（结合 Treesitter）
 vim.opt.foldexpr = "nvim_treesitter#foldexpr()" -- 如果安装 Treesitter
 
--- C/C++ 缩进修复：禁用 cindent 回退，保持一致缩进
-vim.api.nvim_create_autocmd("FileType", {
-	pattern = { "c", "cpp" },
-	callback = function()
-		vim.opt_local.expandtab = true -- 用空格（非 Tab）
-		vim.opt_local.shiftwidth = 4 -- 4 空格缩进
-		vim.opt_local.softtabstop = 4
-		vim.opt_local.autoindent = true -- 保留基本缩进
-		vim.opt_local.smartindent = true -- 启用智能（处理 { } 但不回退）
-		vim.opt_local.cindent = false -- 关键：禁用 cindent，避免 { 回退
-		-- 如果想微调 cinoptions（备选，保留 cindent）
-		-- vim.opt_local.cinoptions = { "(0", ":0", "Ws" }  -- { 不额外缩进，switch case 不缩进
-	end,
-})
+
+-- 全局禁用 cindent 在按 o/O 时的额外缩进（最干净）
+vim.opt.cinkeys = "0{,0},0),0],:,0#,!^F,e"   -- 去掉了 o 和 O
+
+-- 如果你还是想保留 cindent 的其他智能功能，可以加：
+-- vim.opt.cinoptions = "l1"   -- 让 if/while/for 语句本身对齐
 
 --lazy.nvim
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
